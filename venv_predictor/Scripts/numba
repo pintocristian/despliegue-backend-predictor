@@ -1,4 +1,4 @@
-#!D:\Universidad\Tesis\proyecto_despliegue_back\predictor-despliegue-back\backend\env_predictor\Scripts\python.exe
+#!D:\Universidad\Tesis\nuevo_despliegue\despliegue-backend-predictor\venv_predictor\Scripts\python.exe
 # -*- coding: UTF-8 -*-
 from __future__ import print_function, division, absolute_import
 
