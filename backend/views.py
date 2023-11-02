@@ -29,15 +29,15 @@ def predecir(request):
         # Suponiendo que 'pipeline' es tu modelo XGBoost entrenado
         pipeline_predicciones = pipeline.named_steps['procesado_variables'].transform(obs_df)  # Aplicar el pipeline completo
 
-        ""# Predicciones con el modelo XGBoost
+        # Predicciones con el modelo XGBoost
         xgb_model = pipeline.named_steps['estimador']
         predicciones = xgb_model.predict(pipeline_predicciones)
 
-        """ # Crear un explainer SHAP para el modelo
+        # Crear un explainer SHAP para el modelo
         explainer = shap.Explainer(xgb_model)
 
         # Calcular las contribuciones SHAP para todas las instancias en 'pipeline_predicciones'
-        shap_values = explainer.shap_values(pipeline_predicciones)"""
+        shap_values = explainer.shap_values(pipeline_predicciones)
 
         # 'shap_values' es una matriz que contiene las contribuciones SHAP para todas las instancias.
 
@@ -62,12 +62,12 @@ def predecir(request):
         # Llama a la función para guardar en 'data.pkl'
         guardar_en_pkl(nuevo_registro)
 
-        """# Recorre todas las instancias en shap_values
+         # Recorre todas las instancias en shap_values
         for instancia_shap_values in shap_values:
             instancia_importancias = [{'nombre': nombre, 'importancia': float(importancia)}
                                     for nombre, importancia in zip(pipeline_columnas, instancia_shap_values[0])]
             importancia_caracteristicas.append(instancia_importancias)
-"""
+
         return JsonResponse({'prediccion': prediccion_int, 'definicion': definicion,  'importancia_caracteristicas': importancia_caracteristicas})
 
     return JsonResponse({'error': 'Invalid request method'}) 
