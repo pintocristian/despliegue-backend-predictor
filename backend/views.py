@@ -62,7 +62,7 @@ def predecir(request):
         # Llama a la función para guardar en 'data.pkl'
         guardar_en_pkl(nuevo_registro)
 
-         # Recorre todas las instancias en shap_values
+        # Recorre todas las instancias en shap_values
         for instancia_shap_values in shap_values:
             instancia_importancias = [{'nombre': nombre, 'importancia': float(importancia)}
                                     for nombre, importancia in zip(pipeline_columnas, instancia_shap_values[0])]
