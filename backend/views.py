@@ -88,10 +88,17 @@ lock = threading.Lock()
 @csrf_exempt
 def obtener_dataframe(request):
     if request.method == 'GET':
-        try:
-            df = joblib.load(ruta_df_pkl)
-            df_json = df.to_json(orient='records')
-            return JsonResponse({'dataframe': df_json})
-        except FileNotFoundError:
-            return JsonResponse({'error': 'El archivo DataFrame no se encontró.'})
+        def cargar_dataframe():
+            try:
+                with lock:
+                    df = joblib.load(ruta_df_pkl)
+                    df_json = df.to_json(orient='records')
+                    return JsonResponse({'dataframe': df_json})
+            except FileNotFoundError:
+                return JsonResponse({'error': 'El archivo DataFrame no se encontró.'})
+        
+        with ThreadPoolExecutor() as executor:
+            result = executor.submit(cargar_dataframe)
+            return result.result()
+    
     return JsonResponse({'error': 'Invalid request method'})
