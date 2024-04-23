@@ -34,6 +34,23 @@ def predecir(request):
             
             pipeline_predicciones = pipeline.named_steps['procesado_variables'].transform(obs_df)  # Aplicar el pipeline completo
 
+            #Se obtienen los nombres de las variables que resultan del rpocesamiento
+            procesador_pipeline=pipeline.named_steps['procesado_variables']
+            nombres_caracteristicas_procesadas = []
+
+            for nombre, transformador, columnas in procesador_pipeline.transformers_:
+                
+                if hasattr(transformador, 'get_feature_names_out'):
+                    # Obtener los nombres de características generados por el transformador
+                    nombres_generados = transformador.get_feature_names_out()
+                    # Extender la lista de nombres de características procesadas
+                    nombres_caracteristicas_procesadas.extend(nombres_generados)
+                else:
+                    nombres_caracteristicas_procesadas.append(nombre)
+
+            print(nombres_caracteristicas_procesadas)
+
+
             # Predicciones con el modelo XGBoost
             xgb_model = pipeline.named_steps['estimador']
             predicciones = xgb_model.predict(pipeline_predicciones)
@@ -46,9 +63,7 @@ def predecir(request):
 
             # 'shap_values' es una matriz que contiene las contribuciones SHAP para todas las instancias.
 
-            # Puedes acceder a las contribuciones SHAP para la primera instancia de la siguiente manera:
-            # Obtener todas las importancias SHAP para todas las instancias
-            importancia_caracteristicas = []
+           
 
             definicion = ""
             if predicciones[0] == 0:
@@ -67,11 +82,41 @@ def predecir(request):
             # Llama a la función para guardar en 'data.pkl'
             guardar_en_pkl(nuevo_registro)
 
-            # Recorre todas las instancias en shap_values
-            for instancia_shap_values in shap_values:
-                instancia_importancias = [{'nombre': nombre, 'importancia': float(importancia)}
-                                        for nombre, importancia in zip(pipeline_columnas, instancia_shap_values[0])]
-                importancia_caracteristicas.append(instancia_importancias)
+            importancia_caracteristicas_completo = dict(zip(nombres_caracteristicas_procesadas, shap_values[prediccion_int][0]))
+     
+
+            nuevo_dict_caracteristicas_procesadas = {}
+            sumatoria = 0
+            promedio = 0
+            num_caracteristicas = 0
+            for columna in pipeline_columnas:
+                
+                if columna != "naturaleza":
+                    for clave in importancia_caracteristicas_completo:
+                        if columna in clave:
+                            sumatoria = sumatoria + importancia_caracteristicas_completo[clave]
+                            num_caracteristicas = num_caracteristicas + 1
+                    
+                    if num_caracteristicas > 1:
+                        promedio = sumatoria / num_caracteristicas
+                        nuevo_dict_caracteristicas_procesadas[columna] = promedio
+                    else:
+                        nuevo_dict_caracteristicas_procesadas[columna] = sumatoria
+                    
+                    sumatoria = 0
+                    promedio = 0
+                    num_caracteristicas = 0
+
+        
+            # Ordenar el diccionario por los valores en orden descendente
+            sorted_dict = sorted(nuevo_dict_caracteristicas_procesadas.items(), key=lambda x: x[1], reverse=True)
+
+            top_10_tuples = sorted_dict[:10]
+
+            top_10_formatted = [{'nombre': k, 'importancia': v} for k, v in top_10_tuples]
+
+
+            importancia_caracteristicas = [[diccionario] for diccionario in top_10_formatted]
 
             return {'prediccion': prediccion_int, 'definicion': definicion,  'importancia_caracteristicas': importancia_caracteristicas}
 
